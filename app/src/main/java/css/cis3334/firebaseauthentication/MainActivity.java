@@ -1,6 +1,7 @@
 package css.cis3334.firebaseauthentication;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -35,6 +36,9 @@ public class MainActivity extends AppCompatActivity {
     private Button buttonGoogleLogin;
     private Button buttonCreateLogin;
     private Button buttonSignOut;
+    private FirebaseAuth mAuth;
+    private FirebaseAuth.AuthStateListener mAuthListener;
+    private final String TAG = "CIS3334";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +52,28 @@ public class MainActivity extends AppCompatActivity {
         buttonGoogleLogin = (Button) findViewById(R.id.buttonGoogleLogin);
         buttonCreateLogin = (Button) findViewById(R.id.buttonCreateLogin);
         buttonSignOut = (Button) findViewById(R.id.buttonSignOut);
+
+        //Initialize FirebaseAuth instance
+        mAuth = FirebaseAuth.getInstance();
+
+        //Initialize AuthStateListener and create method within
+        mAuthListener = new FirebaseAuth.AuthStateListener()
+        {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth)
+            {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if(user != null)
+                {
+                    //User signed on
+                    Log.d(TAG, "onAuthStateChanged:signed_in" + user.getUid());
+                }else
+                {
+                    //User signed out
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                }
+            }
+        };
 
         buttonLogin.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -78,18 +104,78 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-    }
-
-    private void createAccount(String email, String password) {
 
     }
 
-    private void signIn(String email, String password){
-
+    /**
+     * Attach FirebaseAuth instance at start
+     */
+    @Override
+    public void onStart()
+    {
+        super.onStart();
+        mAuth.addAuthStateListener(mAuthListener);
     }
 
-    private void signOut () {
+    /**
+     * Remove FirebaseAuth at stop.
+     */
+    @Override
+    public void onStop()
+    {
+        super.onStop();
+        if (mAuthListener != null) {
+            mAuth.removeAuthStateListener(mAuthListener);
+        }
+    }
 
+    private void createAccount(String email, String password)
+    {
+        mAuth.createUserWithEmailAndPassword(email, password)
+        .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+        @Override
+        public void onComplete(@NonNull Task<AuthResult> task) {
+            Log.d(TAG, "createUserWithEmail:onComplete:" + task.isSuccessful());
+
+            // If sign in fails, display a message to the user. If sign in succeeds
+            // the auth state listener will be notified and logic to handle the
+            // signed in user can be handled in the listener.
+            if (!task.isSuccessful()) {
+                Toast.makeText(MainActivity.this, "Authentication failed.",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            // ...
+        }
+    });
+    }
+
+    private void signIn(String email, String password)
+    {
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        Log.d(TAG, "signInWithEmail:onComplete:" + task.isSuccessful());
+
+
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "signInWithEmail", task.getException());
+                            Toast.makeText(MainActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+
+                        // ...
+                    }
+                });
+    }
+
+    private void signOut ()
+    {
+        mAuth.signOut();
     }
 
     private void googleSignIn() {
