@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Firebase Authentication</string>
+    <string name="failed">Status: Authentication failed.</string>
+    <string name="success">Status: Authentication successful</string>
 </resources>
